@@ -1,20 +1,21 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'src/article.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 
-void main() => runApp(new MyApp());
+import 'src/article.dart';
+
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
+    return MaterialApp(
       title: 'Flutter Demo',
-      theme: new ThemeData(
+      theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: new MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
@@ -25,49 +26,88 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  _MyHomePageState createState() => new _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<Article> _articles = articles;
+  final _ids = [
+    19347443,
+    19346321,
+    19346985,
+    19345739,
+    19336236,
+    19340234,
+    19346295,
+    19347597,
+    19346342,
+    19347041,
+  ];
+
+  Future<Article> _getArticle(int id) async {
+    final response =
+        await http.get('https://hacker-news.firebaseio.com/v0/item/$id.json');
+    if (response.statusCode == 200) {
+      return parseArticle(response.body);
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      appBar: new AppBar(
-        title: new Text(widget.title),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
       ),
-      body: new RefreshIndicator(
+      body: RefreshIndicator(
         onRefresh: () async {
-          await new Future.delayed(const Duration(seconds: 1));
+          await Future.delayed(Duration(seconds: 1));
           setState(() {
-            _articles.removeAt(0);
+            _ids.removeAt(0);
           });
         },
-        child: new ListView(
-          children: _articles.map(_buildItem).toList(),
+        child: ListView(
+          children: _ids
+              .map((i) => FutureBuilder<Article>(
+                    future: _getArticle(i),
+                    builder: _buildItem,
+                  ))
+              .toList(),
         ),
       ),
     );
   }
 
-  Widget _buildItem(Article article) {
-    return new Padding(
-      key: Key(article.text),
-      padding: const EdgeInsets.all(16.0),
-      child: new ExpansionTile(
-        title: new Text(article.text, style: new TextStyle(fontSize: 24.0)),
+  Widget _buildLoader() {
+    return Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+
+  Widget _buildItem(
+      BuildContext context, AsyncSnapshot<Article> articleSnapshot) {
+    if (articleSnapshot.connectionState != ConnectionState.done ||
+        articleSnapshot.hasError) {
+      return _buildLoader();
+    }
+    final article = articleSnapshot.data;
+    if (article == null) {
+      return _buildLoader();
+    }
+    return Padding(
+      key: Key('${article.id}'),
+      padding: EdgeInsets.all(16.0),
+      child: ExpansionTile(
+        title: Text(article.title ?? '', style: TextStyle(fontSize: 24.0)),
         children: <Widget>[
-          new Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
-              new Text("${article.commentsCount} comments"),
-              new IconButton(
-                icon: new Icon(Icons.launch),
+              Text("By ${article.by}"),
+              IconButton(
+                icon: Icon(Icons.launch),
                 onPressed: () async {
-                  final fakeUrl = "http://${article.domain}";
-                  if (await canLaunch(fakeUrl)) {
-                    launch(fakeUrl);
+                  if (await canLaunch(article.url)) {
+                    launch(article.url);
                   }
                 },
               )
