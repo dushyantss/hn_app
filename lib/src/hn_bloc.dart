@@ -14,14 +14,18 @@ class HackerNewsBloc {
   Topic _topic = Topic.top;
   // Streams
   final _articlesSubject = BehaviorSubject<BuiltList<Article>>();
+  final _isLoading = BehaviorSubject<bool>();
 
   Stream<BuiltList<Article>> get articles => _articlesSubject.stream;
+  Stream<bool> get isLoading => _isLoading.stream;
 
   // Caches
   BuiltList<Article> _topArticles;
   BuiltList<Article> _latestArticles;
 
   HackerNewsBloc() {
+    _isLoading.add(false);
+    _articlesSubject.add(BuiltList<Article>());
     refresh();
   }
 
@@ -29,6 +33,7 @@ class HackerNewsBloc {
     final oldTopic = _topic;
     BuiltList articles;
     try {
+      _isLoading.add(true);
       articles = await _getArticles(_topic);
       if (oldTopic == _topic) {
         if (oldTopic == Topic.top) {
@@ -38,10 +43,12 @@ class HackerNewsBloc {
         }
         _articlesSubject.add(articles);
       }
+      _isLoading.add(false);
     } catch (error) {
       if (oldTopic == _topic) {
         _articlesSubject.addError(error);
       }
+      _isLoading.add(false);
     }
   }
 
