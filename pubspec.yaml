@@ -26,6 +26,7 @@ dependencies:
   url_launcher: ^5.0.1
   built_value: ^6.3.2
   built_collection: ^4.1.0
+  rxdart: ^0.21.0
 
 dev_dependencies:
   flutter_test:

@@ -1,56 +1,47 @@
-import 'dart:async';
+import 'package:built_collection/built_collection.dart';
 import 'package:flutter/material.dart';
+import 'package:hn_app/src/hn_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:http/http.dart' as http;
 
-import 'src/article.dart';
+import 'package:hn_app/src/article.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  final hnBloc = HackerNewsBloc();
+  runApp(MyApp(bloc: hnBloc));
+}
 
 class MyApp extends StatelessWidget {
+  final HackerNewsBloc bloc;
+
+  MyApp({Key key, @required this.bloc}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Flutter Hacker News',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(
+        title: 'Flutter Hacker News',
+        bloc: bloc,
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   final String title;
+  final HackerNewsBloc bloc;
 
-  const MyHomePage({Key key, this.title}) : super(key: key);
+  MyHomePage({Key key, this.title, this.bloc}) : super(key: key);
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  static const _ids = [
-    19347443,
-    19346321,
-    19346985,
-    19345739,
-    19336236,
-    19340234,
-    19346295,
-    19347597,
-    19346342,
-    19347041,
-  ];
-
-  Future<Article> _getArticle(int id) async {
-    final response =
-        await http.get('https://hacker-news.firebaseio.com/v0/item/$id.json');
-    if (response.statusCode == 200) {
-      return parseArticle(response.body);
-    }
-    return null;
-  }
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -58,21 +49,43 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await Future.delayed(Duration(seconds: 1));
+      bottomNavigationBar: BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(
+            title: Text('Top Stories'),
+            icon: Icon(Icons.vertical_align_top),
+          ),
+          BottomNavigationBarItem(
+            title: Text('New Stories'),
+            icon: Icon(Icons.new_releases),
+          ),
+        ],
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          widget.bloc.updateTopic(index == 0 ? Topic.top : Topic.latest);
           setState(() {
-            _ids.removeAt(0);
+            _currentIndex = index;
           });
         },
-        child: ListView(
-          children: _ids
-              .map((i) => FutureBuilder<Article>(
-                    future: _getArticle(i),
-                    builder: _buildItem,
-                  ))
-              .toList(),
-        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: widget.bloc.refresh,
+        child: StreamBuilder<BuiltList<Article>>(
+            initialData: null,
+            stream: widget.bloc.articles,
+            builder: (_, snapshot) {
+              if (snapshot.data == null) {
+                return _buildLoader();
+              } else if (snapshot.hasError) {
+                return Center(child: const Text("Error Occured"));
+              }
+              return ListView.builder(
+                itemCount: snapshot.data.length,
+                itemBuilder: (_, i) {
+                  return _buildItem(snapshot.data[i]);
+                },
+              );
+            }),
       ),
     );
   }
@@ -83,16 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget _buildItem(
-      BuildContext context, AsyncSnapshot<Article> articleSnapshot) {
-    if (articleSnapshot.connectionState != ConnectionState.done ||
-        articleSnapshot.hasError) {
-      return _buildLoader();
-    }
-    final article = articleSnapshot.data;
-    if (article == null) {
-      return _buildLoader();
-    }
+  Widget _buildItem(Article article) {
     return Padding(
       key: Key('${article.id}'),
       padding: const EdgeInsets.all(16.0),
