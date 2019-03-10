@@ -15,22 +15,22 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
   final String title;
+
+  const MyHomePage({Key key, this.title}) : super(key: key);
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final _ids = [
+  static const _ids = [
     19347443,
     19346321,
     19346985,
@@ -78,7 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildLoader() {
-    return Center(
+    return const Center(
       child: CircularProgressIndicator(),
     );
   }
@@ -95,7 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     return Padding(
       key: Key('${article.id}'),
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: ExpansionTile(
         title: Text(article.title ?? '', style: TextStyle(fontSize: 24.0)),
         children: <Widget>[
@@ -104,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               Text("By ${article.by}"),
               IconButton(
-                icon: Icon(Icons.launch),
+                icon: const Icon(Icons.launch),
                 onPressed: () async {
                   if (await canLaunch(article.url)) {
                     launch(article.url);
