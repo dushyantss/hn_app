@@ -76,3 +76,16 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.io/custom-fonts/#from-packages
+  fonts:
+    - family: EBGaramond
+      fonts:
+        - asset: fonts/EBGaramond-Bold.ttf
+        - asset: fonts/EBGaramond-BoldItalic.ttf
+        - asset: fonts/EBGaramond-ExtraBold.ttf
+        - asset: fonts/EBGaramond-ExtraBoldItalic.ttf
+        - asset: fonts/EBGaramond-Italic.ttf
+        - asset: fonts/EBGaramond-Medium.ttf
+        - asset: fonts/EBGaramond-MediumItalic.ttf
+        - asset: fonts/EBGaramond-Regular.ttf
+        - asset: fonts/EBGaramond-SemiBold.ttf
+        - asset: fonts/EBGaramond-SemiBoldItalic.ttf

@@ -12,6 +12,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  static const primaryColor = Colors.white;
+
   final HackerNewsBloc bloc;
 
   MyApp({Key key, @required this.bloc}) : super(key: key);
@@ -21,7 +23,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Hacker News',
       theme: ThemeData(
-        primarySwatch: Colors.deepOrange,
+        primaryColor: primaryColor,
+        scaffoldBackgroundColor: primaryColor,
+        canvasColor: Colors.black,
+        textTheme: Theme.of(context).textTheme.copyWith(
+            caption: TextStyle(color: Colors.white54),
+            subhead: TextStyle(fontFamily: 'EBGaramond', fontSize: 22.0)),
       ),
       home: MyHomePage(
         title: 'Flutter Hacker News',
@@ -49,28 +56,11 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
-        leading: LoadingInfo(
-          isLoading: widget.bloc.isLoading,
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(
-            title: Text('Top Stories'),
-            icon: Icon(Icons.vertical_align_top),
-          ),
-          BottomNavigationBarItem(
-            title: Text('New Stories'),
-            icon: Icon(Icons.new_releases),
-          ),
+        actions: [
+          LoadingInfo(isLoading: widget.bloc.isLoading),
         ],
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          widget.bloc.updateTopic(index == 0 ? Topic.top : Topic.latest);
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        elevation: 0.0,
+        centerTitle: true,
       ),
       body: RefreshIndicator(
         onRefresh: widget.bloc.refresh,
@@ -91,6 +81,25 @@ class _MyHomePageState extends State<MyHomePage> {
               );
             }),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(
+            title: Text('Top Stories'),
+            icon: Icon(Icons.vertical_align_top),
+          ),
+          BottomNavigationBarItem(
+            title: Text('New Stories'),
+            icon: Icon(Icons.new_releases),
+          ),
+        ],
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          widget.bloc.updateTopic(index == 0 ? Topic.top : Topic.latest);
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+      ),
     );
   }
 
@@ -103,23 +112,27 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _buildItem(Article article) {
     return Padding(
       key: Key('${article.id}'),
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 12.0),
       child: ExpansionTile(
-        title: Text(article.title ?? '', style: TextStyle(fontSize: 24.0)),
-        children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              Text("By ${article.by}"),
-              IconButton(
-                icon: const Icon(Icons.launch),
-                onPressed: () async {
-                  if (await canLaunch(article.url)) {
-                    launch(article.url);
-                  }
-                },
-              )
-            ],
+        title: Text(article.title ?? ''),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text("${article.descendants} comments"),
+                const SizedBox(width: 16.0),
+                IconButton(
+                  icon: const Icon(Icons.launch),
+                  onPressed: () async {
+                    if (await canLaunch(article.url)) {
+                      launch(article.url);
+                    }
+                  },
+                )
+              ],
+            ),
           ),
         ],
       ),
